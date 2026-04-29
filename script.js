@@ -198,21 +198,46 @@ async function processarFila() {
 async function enviarParaWebhook(dados) {
   if (!WEBHOOK_URL || WEBHOOK_URL.includes('COLE_A_URL')) return false;
   try {
-    const params = new URLSearchParams({
-      estande:    dados.numero_estande,
-      cnpj:       dados.cnpj,
-      cnpj_fmt:   dados.cnpj_formatado,
-      valor:      dados.valor_aproximado,
-      tipo:       dados.tipo_transacao,
-      avaliacao:  dados.avaliacao_atendimento,
-      ip:         dados.ip_address,
-      data_hora:  dados.data_hora,
-      timestamp:  dados.timestamp_iso
-    });
-    await fetch(`${WEBHOOK_URL}?${params.toString()}`, {
-      method: 'GET',
-      mode: 'no-cors'
-    });
+    // Usa <form> + iframe oculto — contorna CORS e redirecionamentos do Apps Script
+    const iframe = document.createElement('iframe');
+    iframe.name = 'hidden_frame';
+    iframe.style.display = 'none';
+    document.body.appendChild(iframe);
+
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = WEBHOOK_URL;
+    form.target = 'hidden_frame';
+    form.style.display = 'none';
+
+    const campos = {
+      estande:   dados.numero_estande,
+      cnpj:      dados.cnpj,
+      cnpj_fmt:  dados.cnpj_formatado,
+      valor:     dados.valor_aproximado,
+      tipo:      dados.tipo_transacao,
+      avaliacao: dados.avaliacao_atendimento,
+      ip:        dados.ip_address,
+      data_hora: dados.data_hora
+    };
+
+    for (const [chave, valor] of Object.entries(campos)) {
+      const input = document.createElement('input');
+      input.type = 'hidden';
+      input.name = chave;
+      input.value = valor;
+      form.appendChild(input);
+    }
+
+    document.body.appendChild(form);
+    form.submit();
+
+    // Limpar após envio
+    setTimeout(() => {
+      document.body.removeChild(form);
+      document.body.removeChild(iframe);
+    }, 5000);
+
     return true;
   } catch {
     return false;

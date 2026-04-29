@@ -79,7 +79,16 @@ function doGet(e) {
 }
 
 function doPost(e) {
-  return doGet(e);
+  // Form submit envia em e.parameter (form-encoded)
+  if (e && e.parameter && e.parameter.cnpj) return doGet(e);
+  // Fallback JSON
+  try {
+    const p = JSON.parse(e.postData.contents);
+    e.parameter = p;
+    return doGet(e);
+  } catch {
+    return doGet(e);
+  }
 }
 
 // ==============================================================
