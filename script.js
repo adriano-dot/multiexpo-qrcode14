@@ -198,10 +198,19 @@ async function processarFila() {
 async function enviarParaWebhook(dados) {
   if (!WEBHOOK_URL || WEBHOOK_URL.includes('COLE_A_URL')) return false;
   try {
-    await fetch(WEBHOOK_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'text/plain' }, // Apps Script exige text/plain para no-cors
-      body: JSON.stringify(dados),
+    const params = new URLSearchParams({
+      estande:    dados.numero_estande,
+      cnpj:       dados.cnpj,
+      cnpj_fmt:   dados.cnpj_formatado,
+      valor:      dados.valor_aproximado,
+      tipo:       dados.tipo_transacao,
+      avaliacao:  dados.avaliacao_atendimento,
+      ip:         dados.ip_address,
+      data_hora:  dados.data_hora,
+      timestamp:  dados.timestamp_iso
+    });
+    await fetch(`${WEBHOOK_URL}?${params.toString()}`, {
+      method: 'GET',
       mode: 'no-cors'
     });
     return true;

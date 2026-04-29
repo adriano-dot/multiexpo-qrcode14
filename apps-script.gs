@@ -16,12 +16,30 @@ const CABECALHO = [
 // ==============================================================
 // doPost — recebe os dados do formulário
 // ==============================================================
-function doPost(e) {
+function doGet(e) {
   try {
-    const dados = JSON.parse(e.postData.contents);
+    const p = e.parameter;
+
+    // Se não vier parâmetros é um health check
+    if (!p || !p.cnpj) {
+      return ContentService
+        .createTextOutput('Multiexpo QR Code API — OK')
+        .setMimeType(ContentService.MimeType.TEXT);
+    }
+
+    const dados = {
+      numero_estande:       p.estande,
+      cnpj:                 p.cnpj,
+      cnpj_formatado:       p.cnpj_fmt,
+      valor_aproximado:     parseFloat(p.valor),
+      tipo_transacao:       p.tipo,
+      avaliacao_atendimento: parseInt(p.avaliacao),
+      ip_address:           p.ip,
+      data_hora:            p.data_hora
+    };
+
     const sheet = obterAba();
 
-    // Criar cabeçalho se a aba estiver vazia
     if (sheet.getLastRow() === 0) {
       sheet.appendRow(CABECALHO);
       sheet.getRange(1, 1, 1, CABECALHO.length).setFontWeight('bold');
@@ -29,7 +47,7 @@ function doPost(e) {
     }
 
     const flagSuspeito = verificarFraude(sheet, dados);
-    const id = sheet.getLastRow(); // cabeçalho = linha 1, primeiro dado = linha 2 → id=1
+    const id = sheet.getLastRow();
 
     const tipoFormatado = dados.tipo_transacao === 'compra'
       ? 'Compra efetuada'
@@ -49,10 +67,8 @@ function doPost(e) {
       'valido'
     ]);
 
-    // Formatar linha nova
-    const novaLinha = sheet.getLastRow();
     if (flagSuspeito) {
-      sheet.getRange(novaLinha, 10).setBackground('#fef9c3'); // amarelo para suspeitos
+      sheet.getRange(sheet.getLastRow(), 10).setBackground('#fef9c3');
     }
 
     return resposta({ status: 'ok', id: id });
@@ -62,13 +78,8 @@ function doPost(e) {
   }
 }
 
-// ==============================================================
-// doGet — health check (para testar se o script está no ar)
-// ==============================================================
-function doGet(e) {
-  return ContentService
-    .createTextOutput('Multiexpo QR Code API — OK')
-    .setMimeType(ContentService.MimeType.TEXT);
+function doPost(e) {
+  return doGet(e);
 }
 
 // ==============================================================
