@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>QR Code — Multiexpo Admin</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #f0f4f8;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px 16px;
+    }
+
+    .card {
+      background: #fff;
+      border-radius: 16px;
+      padding: 36px 32px;
+      text-align: center;
+      width: 100%;
+      max-width: 460px;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.1);
+    }
+
+    h1 { color: #1a56db; font-size: 1.7rem; font-weight: 800; margin-bottom: 4px; }
+    .subtitle { color: #6b7280; font-size: 0.9rem; margin-bottom: 28px; }
+
+    label {
+      display: block;
+      text-align: left;
+      font-weight: 600;
+      font-size: 0.9rem;
+      color: #374151;
+      margin-bottom: 6px;
+    }
+
+    input[type="text"] {
+      width: 100%;
+      padding: 12px 14px;
+      border: 2px solid #e5e7eb;
+      border-radius: 10px;
+      font-size: 0.95rem;
+      margin-bottom: 20px;
+      transition: border-color 0.15s;
+    }
+
+    input[type="text"]:focus {
+      outline: none;
+      border-color: #1a56db;
+    }
+
+    #qr-container {
+      margin: 0 auto 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 200px;
+    }
+
+    #qr-container canvas {
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+    }
+
+    .placeholder-txt {
+      color: #9ca3af;
+      font-size: 0.88rem;
+    }
+
+    .btn-row {
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      padding: 12px 24px;
+      border-radius: 8px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s;
+      border: 2px solid transparent;
+    }
+
+    .btn-primary {
+      background: #1a56db;
+      color: #fff;
+    }
+
+    .btn-primary:hover { background: #1e40af; }
+
+    .btn-outline {
+      background: #fff;
+      color: #1a56db;
+      border-color: #1a56db;
+    }
+
+    .btn-outline:hover { background: #eff6ff; }
+
+    .btn:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+
+    .url-display {
+      margin-top: 20px;
+      padding: 10px 14px;
+      background: #f9fafb;
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      font-size: 0.82rem;
+      color: #6b7280;
+      word-break: break-all;
+      text-align: left;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>Multiexpo</h1>
+    <p class="subtitle">Gerador de QR Code — Painel Admin</p>
+
+    <label for="url-input">URL do formulário</label>
+    <input type="text" id="url-input"
+           placeholder="https://seusite.com/registrar"
+           oninput="gerarQR()">
+
+    <div id="qr-container">
+      <p class="placeholder-txt">Cole a URL acima para gerar o QR Code</p>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn btn-primary" id="btn-png" onclick="baixarPNG()" disabled>
+        Baixar PNG (2000×2000)
+      </button>
+      <button class="btn btn-outline" id="btn-svg" onclick="baixarSVG()" disabled>
+        Baixar SVG
+      </button>
+    </div>
+
+    <div class="url-display" id="url-display" style="display:none;"></div>
+  </div>
+
+  <!-- qrcode-generator: expõe a matriz de módulos, permite gerar SVG -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
+
+  <script>
+    let qrMatrix = null;
+    let urlAtual = '';
+
+    function gerarQR() {
+      urlAtual = document.getElementById('url-input').value.trim();
+      const container = document.getElementById('qr-container');
+      const btnPng = document.getElementById('btn-png');
+      const btnSvg = document.getElementById('btn-svg');
+      const urlDisplay = document.getElementById('url-display');
+
+      if (!urlAtual) {
+        container.innerHTML = '<p class="placeholder-txt">Cole a URL acima para gerar o QR Code</p>';
+        btnPng.disabled = true;
+        btnSvg.disabled = true;
+        urlDisplay.style.display = 'none';
+        qrMatrix = null;
+        return;
+      }
+
+      // Gerar QR com nível de correção H (mais robusto para impressão)
+      const qr = qrcode(0, 'H');
+      qr.addData(urlAtual);
+      qr.make();
+
+      qrMatrix = qr;
+
+      // Renderizar canvas de preview (300×300)
+      const size = 300;
+      const modules = qr.getModuleCount();
+      const cellSize = Math.floor(size / modules);
+      const margin = Math.floor((size - cellSize * modules) / 2);
+
+      const canvas = document.createElement('canvas');
+      canvas.width = size;
+      canvas.height = size;
+      const ctx = canvas.getContext('2d');
+
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, size, size);
+      ctx.fillStyle = '#000000';
+
+      for (let row = 0; row < modules; row++) {
+        for (let col = 0; col < modules; col++) {
+          if (qr.isDark(row, col)) {
+            ctx.fillRect(
+              margin + col * cellSize,
+              margin + row * cellSize,
+              cellSize,
+              cellSize
+            );
+          }
+        }
+      }
+
+      container.innerHTML = '';
+      container.appendChild(canvas);
+
+      btnPng.disabled = false;
+      btnSvg.disabled = false;
+      urlDisplay.style.display = 'block';
+      urlDisplay.textContent = '🔗 ' + urlAtual;
+    }
+
+    // ----------------------------------------------------------
+    // Baixar PNG 2000×2000
+    // ----------------------------------------------------------
+    function baixarPNG() {
+      if (!qrMatrix) return;
+
+      const OUTPUT = 2000;
+      const modules = qrMatrix.getModuleCount();
+      const MARGEM_MODULOS = 4; // margem branca em módulos (padrão ISO)
+      const totalModulos = modules + MARGEM_MODULOS * 2;
+      const cellSize = Math.floor(OUTPUT / totalModulos);
+      const offsetPx = Math.floor((OUTPUT - cellSize * totalModulos) / 2) + MARGEM_MODULOS * cellSize;
+
+      const canvas = document.createElement('canvas');
+      canvas.width = OUTPUT;
+      canvas.height = OUTPUT;
+      const ctx = canvas.getContext('2d');
+
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, OUTPUT, OUTPUT);
+      ctx.fillStyle = '#000000';
+
+      for (let row = 0; row < modules; row++) {
+        for (let col = 0; col < modules; col++) {
+          if (qrMatrix.isDark(row, col)) {
+            ctx.fillRect(
+              offsetPx + col * cellSize,
+              offsetPx + row * cellSize,
+              cellSize,
+              cellSize
+            );
+          }
+        }
+      }
+
+      const a = document.createElement('a');
+      a.download = 'multiexpo-qrcode-2000px.png';
+      a.href = canvas.toDataURL('image/png');
+      a.click();
+    }
+
+    // ----------------------------------------------------------
+    // Baixar SVG vetorial
+    // ----------------------------------------------------------
+    function baixarSVG() {
+      if (!qrMatrix) return;
+
+      const modules = qrMatrix.getModuleCount();
+      const MARGEM = 4;
+      const total = modules + MARGEM * 2;
+      const cellSize = 10; // 10 unidades por módulo → SVG escalável
+      const svgSize = total * cellSize;
+
+      let rects = '';
+      for (let row = 0; row < modules; row++) {
+        for (let col = 0; col < modules; col++) {
+          if (qrMatrix.isDark(row, col)) {
+            const x = (MARGEM + col) * cellSize;
+            const y = (MARGEM + row) * cellSize;
+            rects += `<rect x="${x}" y="${y}" width="${cellSize}" height="${cellSize}" fill="#000"/>`;
+          }
+        }
+      }
+
+      const svg = `<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg"
+     viewBox="0 0 ${svgSize} ${svgSize}"
+     width="${svgSize}" height="${svgSize}"
+     shape-rendering="crispEdges">
+  <rect width="${svgSize}" height="${svgSize}" fill="#fff"/>
+  ${rects}
+</svg>`;
+
+      const blob = new Blob([svg], { type: 'image/svg+xml' });
+      const a = document.createElement('a');
+      a.download = 'multiexpo-qrcode.svg';
+      a.href = URL.createObjectURL(blob);
+      a.click();
+      URL.revokeObjectURL(a.href);
+    }
+  </script>
+</body>
+</html>

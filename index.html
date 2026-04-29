@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <title>Registrar Negociação — Multiexpo</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="container">
+    <header class="logo">
+      <h1>Multiexpo</h1>
+      <p>Registro de Negociação</p>
+    </header>
+
+    <form id="form-registro" novalidate>
+
+      <!-- Campo 1: Estande -->
+      <div class="field-group">
+        <label for="estande">Nº do Estande <span class="obrig">*</span></label>
+        <select id="estande" name="estande" required>
+          <option value="">Selecione o estande</option>
+        </select>
+        <span class="field-error" id="estande-error"></span>
+      </div>
+
+      <!-- Campo 2: CNPJ -->
+      <div class="field-group">
+        <label for="cnpj">CNPJ <span class="obrig">*</span></label>
+        <input type="text" id="cnpj" name="cnpj"
+               placeholder="00.000.000/0000-00"
+               maxlength="18" inputmode="numeric" required>
+        <span class="field-error" id="cnpj-error"></span>
+      </div>
+
+      <!-- Campo 3: Valor -->
+      <div class="field-group">
+        <label for="valor">Valor aproximado negociado (R$) <span class="obrig">*</span></label>
+        <p class="field-hint">Informe o valor aproximado negociado</p>
+        <input type="number" id="valor" name="valor"
+               placeholder="Ex: 1500" min="0.01" step="0.01"
+               inputmode="decimal" required>
+        <span class="field-error" id="valor-error"></span>
+      </div>
+
+      <!-- Campo 4: Tipo de transação -->
+      <div class="field-group">
+        <label>Tipo de transação <span class="obrig">*</span></label>
+        <div class="btn-group">
+          <button type="button" class="btn-tipo" data-value="compra">
+            Compra efetuada
+          </button>
+          <button type="button" class="btn-tipo" data-value="negociacao">
+            Somente negociação
+          </button>
+        </div>
+        <input type="hidden" id="tipo_transacao" name="tipo_transacao">
+        <span class="field-error" id="tipo-error"></span>
+      </div>
+
+      <!-- Campo 5: Avaliação -->
+      <div class="field-group">
+        <label>Avaliação do atendimento <span class="obrig">*</span></label>
+        <p class="field-hint">0 = péssimo &nbsp;|&nbsp; 10 = excelente</p>
+        <div class="rating-group" id="rating-group"></div>
+        <input type="hidden" id="avaliacao" name="avaliacao">
+        <span class="field-error" id="avaliacao-error"></span>
+      </div>
+
+      <div id="form-warning" class="warning-box" style="display:none;"></div>
+
+      <button type="submit" class="btn-submit" id="btn-submit">
+        Registrar
+      </button>
+    </form>
+
+    <div id="success-screen" class="success-screen" style="display:none;">
+      <div class="success-icon">✅</div>
+      <h2>Cadastro realizado com sucesso!</h2>
+      <p>Seu CNPJ está participando do sorteio.</p>
+      <button class="btn-novo" onclick="resetForm()">Novo registro</button>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
